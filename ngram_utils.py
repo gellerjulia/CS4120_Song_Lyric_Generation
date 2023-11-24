@@ -8,13 +8,14 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 SENTENCE_BEGIN = "<s>"
 SENTENCE_END = "</s>"
 
-def get_lyrics_in_genre(df: pd.DataFrame, genre: str, song_limit: int = None) -> list:
+def get_lyrics_in_genre(df: pd.DataFrame, genre: str, verbose: bool = False, song_limit: int = None) -> list:
 	"""
 	 Returns the lyrics of songs in df with the given genre.
 
 	 Args:
 			df (pandas DataFrame): dataframe of artist and lyric data
 			genre (str): a music genre found in df
+      verbose (bool): if True, prints the number of songs and lines
 			song_limit (int): if present, the number of songs to include in the training data (used to cut down on training/generation time)
 
 		Returns:
@@ -23,6 +24,7 @@ def get_lyrics_in_genre(df: pd.DataFrame, genre: str, song_limit: int = None) ->
 	""" 
 	genre_df = df[df['genres'].apply(lambda x: genre in x)]
 	songs = genre_df['lyrics'].tolist()
+	num_songs_in_genre = len(songs)
 
 	if song_limit is not None:
 		songs = random.sample(songs, song_limit)
@@ -31,6 +33,10 @@ def get_lyrics_in_genre(df: pd.DataFrame, genre: str, song_limit: int = None) ->
 	song_lines = []
 	for song in songs:
 		song_lines.extend(song.lower().split('\n'))
+        
+	if verbose:
+		print("Selected", len(songs), "/", num_songs_in_genre, "in the genre", genre)
+		print("Total lines:", len(song_lines))
 		
 	return song_lines
 
@@ -102,7 +108,7 @@ def tokenize(data: list, ngram: int,
   return total
 
 
-def create_ngram_laplace_model(df: pd.DataFrame, genre: str, ngram: int, song_limit: int = None):
+def create_ngram_laplace_model(df: pd.DataFrame, genre: str, ngram: int, verbose: bool = False, song_limit: int = None):
 	"""
 	 Creates a trained n-gram language model using Laplace Smoothing. Model will be trained on songs in the given 
 	 music genre. 
@@ -111,18 +117,20 @@ def create_ngram_laplace_model(df: pd.DataFrame, genre: str, ngram: int, song_li
 				df (pandas DataFrame): dataframe of artist and lyric data
 				genre (str): a music genre found in df
 				ngram (int): the n-gram order of the language model to create
+        verbose (bool): if True, prints information about the training data 
 				song_limit (int): if present, the number of songs to include in the training data (used to cut down on training/generation time)
 
 		Returns:
 				A trained NGramLaplaceLanguageModel
 	"""
-	song_lines = get_lyrics_in_genre(df, genre, song_limit)
+	song_lines = get_lyrics_in_genre(df, genre, verbose, song_limit)
 	tokens = tokenize(song_lines, ngram)
 	model = lm.NGramLaplaceLanguageModel(ngram)
-	model.train(tokens)
+	model.train(tokens, verbose=verbose)
+
 	return model
 
-def create_ngram_kneser_ney_model(df: pd.DataFrame, genre: str, ngram: int, song_limit: int = None):
+def create_ngram_kneser_ney_model(df: pd.DataFrame, genre: str, ngram: int, verbose: bool = False, song_limit: int = None):
 	"""
 	 Creates a trained n-gram language model using Kneser-Ney Smoothing. Model will be trained on songs in the given 
 	 music genre. 
@@ -131,18 +139,23 @@ def create_ngram_kneser_ney_model(df: pd.DataFrame, genre: str, ngram: int, song
 				df (pandas DataFrame): dataframe of artist and lyric data
 				genre (str): a music genre found in df
 				ngram (int): the n-gram order of the language model to create
+        verbose (bool): if True, prints information about the training data 
 				song_limit (int): if present, the number of songs to include in the training data (used to cut down on training/generation time)
 
 		Returns:
 				A trained KneserNeyInterpolated
 	"""
-	song_lines = get_lyrics_in_genre(df, genre, song_limit)
+	song_lines = get_lyrics_in_genre(df, genre, verbose, song_limit)
 	tokens = [tokenize_line(line, ngram) for line in song_lines]
 
 	# allowing padded_everygram_pipeline to create ngrams for the model 
-	#song_tokens = [nltk.word_tokenize(line) for line in song_lines]
 	ngrams_generator, padded_sents = padded_everygram_pipeline(ngram, tokens)
 
 	model = nltk.lm.KneserNeyInterpolated(ngram)
 	model.fit(ngrams_generator, padded_sents)
+     
+	if verbose:
+		print("Number of tokens:", len(tokens))
+		print("Vocabulary Size:", len(model.vocab))
+	
 	return model

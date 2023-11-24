@@ -68,10 +68,8 @@ class NGramLaplaceLanguageModel:
 
     if verbose:
       print("Number of tokens:", len(cleaned_tokens))
-      print("Number of N-grams:", len(n_grams))
-      print("N-gram examples:", self.n_gram_counts.items()[:10])
+      print("N-gram examples:", list(self.n_gram_counts.keys())[:5])
       print("Vocabulary Size:", self.vocab_size)
-
 
   def score_unigram(self, sentence_tokens: list) -> float:
     """Calculates the probability score for a given string representing a single sequence of tokens.
@@ -137,7 +135,6 @@ class NGramLaplaceLanguageModel:
     else:
       return self.score_ngram(cleaned_sentence_tokens)
     
-
 
   def generate_sentence_unigram(self) -> list:
     """Generates a single sentence from a trained language model using the Shannon technique.
