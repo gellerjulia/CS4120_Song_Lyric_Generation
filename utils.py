@@ -1,9 +1,7 @@
-import pandas as pd
-import random
-import ngram_laplace_lm_model as lm
 import nltk
-from nltk.lm.preprocessing import padded_everygram_pipeline
+import pandas as pd
 
+nltk.download('punkt')
 
 SENTENCE_BEGIN = "<s>"
 SENTENCE_END = "</s>"
@@ -108,54 +106,13 @@ def tokenize(data: list, ngram: int,
   return total
 
 
-def create_ngram_laplace_model(df: pd.DataFrame, genre: str, ngram: int, verbose: bool = False, song_limit: int = None):
-	"""
-	 Creates a trained n-gram language model using Laplace Smoothing. Model will be trained on songs in the given 
-	 music genre. 
-
-	 Args:
-				df (pandas DataFrame): dataframe of artist and lyric data
-				genre (str): a music genre found in df
-				ngram (int): the n-gram order of the language model to create
-        verbose (bool): if True, prints information about the training data 
-				song_limit (int): if present, the number of songs to include in the training data (used to cut down on training/generation time)
-
-		Returns:
-				A trained NGramLaplaceLanguageModel
-	"""
-	song_lines = get_lyrics_in_genre(df, genre, verbose, song_limit)
-	tokens = tokenize(song_lines, ngram)
-	model = lm.NGramLaplaceLanguageModel(ngram)
-	model.train(tokens, verbose=verbose)
-
-	return model
-
-def create_ngram_kneser_ney_model(df: pd.DataFrame, genre: str, ngram: int, verbose: bool = False, song_limit: int = None):
-	"""
-	 Creates a trained n-gram language model using Kneser-Ney Smoothing. Model will be trained on songs in the given 
-	 music genre. 
-
-	 Args:
-				df (pandas DataFrame): dataframe of artist and lyric data
-				genre (str): a music genre found in df
-				ngram (int): the n-gram order of the language model to create
-        verbose (bool): if True, prints information about the training data 
-				song_limit (int): if present, the number of songs to include in the training data (used to cut down on training/generation time)
-
-		Returns:
-				A trained KneserNeyInterpolated
-	"""
-	song_lines = get_lyrics_in_genre(df, genre, verbose, song_limit)
-	tokens = [tokenize_line(line, ngram) for line in song_lines]
-
-	# allowing padded_everygram_pipeline to create ngrams for the model 
-	ngrams_generator, padded_sents = padded_everygram_pipeline(ngram, tokens)
-
-	model = nltk.lm.KneserNeyInterpolated(ngram)
-	model.fit(ngrams_generator, padded_sents)
-     
-	if verbose:
-		print("Number of tokens:", len(tokens))
-		print("Vocabulary Size:", len(model.vocab))
-	
-	return model
+# def read_file(datapath, ngram, by_character=False):
+#     '''Reads and Returns the "data" as list of list (as shown above)'''
+#     data = []
+#     with open(datapath, encoding="utf8") as csvfile:
+#         reader = csv.DictReader(csvfile)
+#         for row in reader:
+#             # THIS IS WHERE WE GET CHARACTERS INSTEAD OF WORDS
+#             # replace spaces with underscores
+#             data.append(tokenize_line(row['text'].lower(), ngram, by_char=by_character, space_char="_"))
+#     return data
