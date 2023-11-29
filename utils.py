@@ -47,7 +47,6 @@ def get_lyrics_in_genre(df: pd.DataFrame, genre: str, verbose: bool = False, by_
 
 
 def tokenize_line(line: str, ngram: int, 
-									 by_char: bool = False, 
 									 sentence_begin: str=SENTENCE_BEGIN, 
 									 sentence_end: str=SENTENCE_END):
 	"""
@@ -58,20 +57,13 @@ def tokenize_line(line: str, ngram: int,
 	Args:
 		line (str): text to tokenize
 		ngram (int): ngram preparation number
-		by_char (bool):  if True, tokenize by character, if
-			False, tokenize by whitespace
 		sentence_begin (str): sentence begin token value
 		sentence_end (str): sentence end token value
 
 	Returns:
 		list of strings - a single line tokenized
 	"""
-	inner_pieces = None
-	if by_char:
-		inner_pieces = list(line)
-	else:
-		# otherwise split on white space
-		inner_pieces = nltk.word_tokenize(line)
+	inner_pieces = nltk.word_tokenize(line)
 
 	if ngram == 1:
 		tokens = [sentence_begin] + inner_pieces + [sentence_end]
@@ -81,8 +73,7 @@ def tokenize_line(line: str, ngram: int,
 	return tokens
 
 
-def tokenize(data: list, ngram: int, 
-									 by_char: bool = False, 
+def tokenize(data: list, ngram: int,  
 									 sentence_begin: str=SENTENCE_BEGIN, 
 									 sentence_end: str=SENTENCE_END):
 	"""
@@ -93,8 +84,6 @@ def tokenize(data: list, ngram: int,
 	Args:
 		data (list): list of strings to tokenize
 		ngram (int): ngram preparation number
-		by_char (bool):  if True, tokenize by character, if
-			False, tokenize by whitespace
 		sentence_begin (str): sentence begin token value
 		sentence_end (str): sentence end token value
 
@@ -108,18 +97,6 @@ def tokenize(data: list, ngram: int,
 		# skip empty lines
 		if len(line) == 0:
 			continue
-		tokens = tokenize_line(line, ngram, by_char, sentence_begin, sentence_end)
+		tokens = tokenize_line(line, ngram, sentence_begin, sentence_end)
 		total += tokens
 	return total
-
-
-# def read_file(datapath, ngram, by_character=False):
-#     '''Reads and Returns the "data" as list of list (as shown above)'''
-#     data = []
-#     with open(datapath, encoding="utf8") as csvfile:
-#         reader = csv.DictReader(csvfile)
-#         for row in reader:
-#             # THIS IS WHERE WE GET CHARACTERS INSTEAD OF WORDS
-#             # replace spaces with underscores
-#             data.append(tokenize_line(row['text'].lower(), ngram, by_char=by_character, space_char="_"))
-#     return data
