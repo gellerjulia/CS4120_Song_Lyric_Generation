@@ -4,6 +4,7 @@ import nltk
 
 SENTENCE_BEGIN = "<s>"
 SENTENCE_END = "</s>"
+NEWLINE = "NEW"
 
 def get_lyrics_in_genre(df: pd.DataFrame, genre: str, verbose: bool = False, by_verse: bool = False, song_limit: int = None) -> list:
 	"""
@@ -36,7 +37,14 @@ def get_lyrics_in_genre(df: pd.DataFrame, genre: str, verbose: bool = False, by_
 	song_seqs = []
 	for song in songs:
 		seqs = song.lower().split(token_to_split)
-		seqs = list(filter(lambda x: len(x) > 0, seqs)) # filter out blank lines 
+
+		# when splitting by verse, replace single \n with special token to preserve newlines when tokenizing 
+		if by_verse:
+			verses = [verse.split('\n') for verse in seqs]
+			seqs = [str(" " + NEWLINE + " ").join(verse_lines) for verse_lines in verses]
+
+		# filter out blank lines 
+		seqs = list(filter(lambda x: len(x) > 0, seqs)) 
 		song_seqs.extend(seqs)
 				
 	if verbose:
