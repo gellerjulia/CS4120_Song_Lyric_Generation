@@ -29,6 +29,7 @@ def get_lyrics_in_genre(df: pd.DataFrame, genre: str, verbose: bool = False, by_
 	num_songs_in_genre = len(songs)
 
 	if song_limit is not None:
+		random.seed(42) # set seed for consistent results 
 		songs = random.sample(songs, song_limit)
 
 	token_to_split = '\n\n' if by_verse else '\n' 
@@ -43,15 +44,47 @@ def get_lyrics_in_genre(df: pd.DataFrame, genre: str, verbose: bool = False, by_
 			verses = [verse.split('\n') for verse in seqs]
 			seqs = [str(" " + NEWLINE + " ").join(verse_lines) for verse_lines in verses]
 
-		# filter out blank lines 
-		seqs = list(filter(lambda x: len(x) > 0, seqs)) 
-		song_seqs.extend(seqs)
+		# filter out blank lines and lines with meta data
+		meta_lyrics = ["chorus", "verse", "bridge", '----']
+		cleaned_seqs = []
+		for seq in seqs:
+			if len(seq) > 0 and not any(meta in seq for meta in meta_lyrics):
+				cleaned_seqs.append(seq) 
+
+		song_seqs.extend(cleaned_seqs)
 				
 	if verbose:
 		print("Selected", len(songs), "/", num_songs_in_genre, "in the genre", genre)
 		print("Total sequences:", len(song_seqs))
 		
 	return song_seqs
+
+
+def split_songs_into_lines(songs: list):
+	"""
+	Converts a list of songs into a list of individual lyric lines by splitting on newlines.
+	Removes empty samples or lines with metadata to have more real lyric lines.
+
+	Args:
+		songs (list): a list of strings, where each string is a whole song
+
+	Returns:
+		song_lines (list): a list of strings, where each string is a single line in a song 
+	"""
+	song_lines = []
+	for song in songs:
+		lines = song.lower().split('\n')
+
+		# filter out blank lines and lines with meta data
+		meta_lyrics = ["chorus", "verse", "bridge", '----']
+		cleaned_lines = []
+		for line in lines:
+			if len(line) > 0 and not any(meta in line for meta in meta_lyrics):
+				cleaned_lines.append(line) 
+
+		song_lines.extend(cleaned_lines)
+					
+	return song_lines
 
 
 def tokenize_line(line: str, ngram: int, 
