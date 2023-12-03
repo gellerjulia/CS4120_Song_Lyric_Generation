@@ -1,6 +1,7 @@
 from collections import Counter
 import numpy as np
 import math
+import random
 
 
 # constants
@@ -43,11 +44,13 @@ class NGramLaplaceLanguageModel:
     # first identify tokens with only one occurrence and replace with UNK 
     token_counts = Counter(tokens)
     cleaned_tokens = []
+    unknown_tokens = []
     for token in tokens:
       if token_counts[token] > 1:
         cleaned_tokens.append(token)
       else:
         cleaned_tokens.append(UNK)
+        unknown_tokens.append(token)
 
     # find n-grams 
     n_grams = create_ngrams(cleaned_tokens, self.n)
@@ -57,6 +60,9 @@ class NGramLaplaceLanguageModel:
     self.vocabulary = set(cleaned_tokens)
     # we'll also want the size of our vocabulary for laplace smoothing calculations 
     self.vocab_size = len(self.vocabulary)
+    
+    # save vocabulary of unknown words for generation 
+    self.unknown_tokens = unknown_tokens
 
     # collecting data needed for the denominator of score calculations 
     if self.n == 1: 
@@ -70,7 +76,7 @@ class NGramLaplaceLanguageModel:
       print("Number of tokens:", len(cleaned_tokens))
       print("N-gram examples:", list(self.n_gram_counts.keys())[:5])
       print("Vocabulary Size:", self.vocab_size)
-
+  
   def score_unigram(self, sentence_tokens: list) -> float:
     """Calculates the probability score for a given string representing a single sequence of tokens.
        Assumes that we are using a unigram model and uses Laplace smoothing.
@@ -80,19 +86,19 @@ class NGramLaplaceLanguageModel:
     Returns:
       float: the probability value of the given tokens for this model
     """
-    total_prob = 1
+    total_log_prob = 0
     for token in sentence_tokens:
         unigram_to_score = tuple([token])
         # P(w_i) = ( count(w_i) + 1 ) / ( N + |V| )
         unigram_prob = (self.n_gram_counts[unigram_to_score] + 1) / (self.num_tokens + self.vocab_size)
-        total_prob *= unigram_prob
+        total_log_prob += np.log(unigram_prob)
 
-    return total_prob
+    return np.exp(total_log_prob)
 
-
+  
   def score_ngram(self, sentence_tokens: list) -> float:
     """Calculates the probability score for a given string representing a single sequence of tokens.
-       Assumes that we are using a n-gram model with n > 1 and uses Laplace smoothing.
+        Assumes that we are using a n-gram model with n > 1 and uses Laplace smoothing.
     Args:
       sentence_tokens (list): a tokenized sequence to be scored by this model
       
@@ -100,7 +106,7 @@ class NGramLaplaceLanguageModel:
       float: the probability value of the given tokens for this model
     """
     n = self.n
-    total_prob = 1
+    total_log_prob = 0
 
     # iterate through all n-grams
     for i in range(len(sentence_tokens) - n + 1):
@@ -109,9 +115,9 @@ class NGramLaplaceLanguageModel:
 
         # P(w_i | w_{i-N+1}...w_{i-1}) = ( count(w_{i-N+1}...w_i) + 1 ) / ( count(w_{i-N+1}...w_{i-1}) + |V| )
         n_gram_prob = (self.n_gram_counts[n_gram_to_score] + 1) / (self.n_sub1_gram_counts[prefix] + self.vocab_size)
-        total_prob *= n_gram_prob
+        total_log_prob += np.log(n_gram_prob)
 
-    return total_prob
+    return np.exp(total_log_prob)
 
 
   def score(self, sentence_tokens: list) -> float:
@@ -135,6 +141,15 @@ class NGramLaplaceLanguageModel:
     else:
       return self.score_ngram(cleaned_sentence_tokens)
     
+  def sample_unknown(self) -> str:
+    """
+    Randomly picks a word from our vocabulary of unknown words 
+    (words found in training data at low frequencies)
+
+    Returns:
+      A single token sampled from the unknown words list
+    """
+    return random.choice(self.unknown_tokens)
 
   def generate_sentence_unigram(self) -> list:
     """Generates a single sentence from a trained language model using the Shannon technique.
@@ -198,9 +213,14 @@ class NGramLaplaceLanguageModel:
       list: the generated sentence as a list of tokens
     """
     if self.n == 1:
-      return self.generate_sentence_unigram()
+      sentence_tokens = self.generate_sentence_unigram()
     else:
-      return self.generate_sentence_ngrams()
+      sentence_tokens = self.generate_sentence_ngrams()
+      
+    # replace <UNK> tokens with a word randomly sampled from the "unknown words" vocabulary 
+    #return list(map(lambda x: x.replace(UNK, ''), sentence_tokens))
+    #return list(map(lambda x: x.replace(UNK, self.sample_unknown()), sentence_tokens))
+    return sentence_tokens
 
   def generate(self, n: int) -> list:
     """Generates n sentences from a trained language model using the Shannon technique.
@@ -222,11 +242,7 @@ class NGramLaplaceLanguageModel:
       float: the perplexity value of the given sequence for this model
     """
     score = self.score(sequence)
+
     # exclude sentence begins in token count for perplexity calculation
     num_tokens = len([token for token in sequence if token != SENTENCE_BEGIN])
     return score ** (-1 / num_tokens)
-
-  
-# not required
-if __name__ == '__main__':
-  print("if having a main is helpful to you, do whatever you want here, but please don't produce too much output :)")
