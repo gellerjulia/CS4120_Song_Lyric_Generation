@@ -75,7 +75,7 @@ def split_songs_into_lines(songs: list):
 	for song in songs:
 		lines = song.lower().split('\n')
 
-		# filter out blank lines and lines with meta data
+		# filter out lines that are blank or have metadata 
 		meta_lyrics = ["chorus", "verse", "bridge", "lyric", "----"]
 		cleaned_lines = []
 		for line in lines:
