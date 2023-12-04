@@ -44,13 +44,11 @@ class NGramLaplaceLanguageModel:
     # first identify tokens with only one occurrence and replace with UNK 
     token_counts = Counter(tokens)
     cleaned_tokens = []
-    unknown_tokens = []
     for token in tokens:
       if token_counts[token] > 1:
         cleaned_tokens.append(token)
       else:
         cleaned_tokens.append(UNK)
-        unknown_tokens.append(token)
 
     # find n-grams 
     n_grams = create_ngrams(cleaned_tokens, self.n)
@@ -60,9 +58,6 @@ class NGramLaplaceLanguageModel:
     self.vocabulary = set(cleaned_tokens)
     # we'll also want the size of our vocabulary for laplace smoothing calculations 
     self.vocab_size = len(self.vocabulary)
-    
-    # save vocabulary of unknown words for generation 
-    self.unknown_tokens = unknown_tokens
 
     # collecting data needed for the denominator of score calculations 
     if self.n == 1: 
@@ -74,7 +69,7 @@ class NGramLaplaceLanguageModel:
 
     if verbose:
       print("Number of tokens:", len(cleaned_tokens))
-      print("N-gram examples:", list(self.n_gram_counts.keys())[:5])
+      print("N-gram examples:", list(self.n_gram_counts.keys())[:3])
       print("Vocabulary Size:", self.vocab_size)
   
   def score_unigram(self, sentence_tokens: list) -> float:
@@ -140,16 +135,6 @@ class NGramLaplaceLanguageModel:
       return self.score_unigram(cleaned_sentence_tokens)
     else:
       return self.score_ngram(cleaned_sentence_tokens)
-    
-  def sample_unknown(self) -> str:
-    """
-    Randomly picks a word from our vocabulary of unknown words 
-    (words found in training data at low frequencies)
-
-    Returns:
-      A single token sampled from the unknown words list
-    """
-    return random.choice(self.unknown_tokens)
 
   def generate_sentence_unigram(self) -> list:
     """Generates a single sentence from a trained language model using the Shannon technique.
@@ -217,10 +202,8 @@ class NGramLaplaceLanguageModel:
     else:
       sentence_tokens = self.generate_sentence_ngrams()
       
-    # replace <UNK> tokens with a word randomly sampled from the "unknown words" vocabulary 
-    #return list(map(lambda x: x.replace(UNK, ''), sentence_tokens))
-    #return list(map(lambda x: x.replace(UNK, self.sample_unknown()), sentence_tokens))
-    return sentence_tokens
+    # remove <UNK> tokens 
+    return list(map(lambda x: x.replace(UNK, ""), sentence_tokens))
 
   def generate(self, n: int) -> list:
     """Generates n sentences from a trained language model using the Shannon technique.
