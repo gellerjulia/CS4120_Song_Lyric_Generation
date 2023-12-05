@@ -94,8 +94,8 @@ def train_model(model: transformers.GPT2LMHeadModel, dset_train: Dset, dset_val:
 
     return model
 
-def generate_texts(model: transformers.GPT2LMHeadModel, tokenizer: transformers.GPT2Tokenizer, n_texts: int) -> List[List[str]]:
-    """ Generates texts from the given model and tokenizer.
+def generate_texts(model: transformers.GPT2LMHeadModel, tokenizer: transformers.GPT2Tokenizer, n_texts: int, file_path=None) -> List[List[str]]:
+    """ Generates texts from the given model and tokenizer and save the texts to a file path if a path is given.
     Args:
       model (transformers.GPT2LMHeadModel): pretrained GPT2 model
       tokenizer (Dset): training dataset
@@ -121,6 +121,11 @@ def generate_texts(model: transformers.GPT2LMHeadModel, tokenizer: transformers.
         # add generated text to final results
         gen_texts.append(text_output)
     
+    if file_path is not None:
+        with open(file_path, 'w') as f:
+          for text in gen_texts:
+            f.write(' '.join(text)+ '/n')
+
     return gen_texts
 
 def load_model(file_path):
