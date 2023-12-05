@@ -29,24 +29,22 @@ def get_model_tokenizer(max_seq_len: int) -> tuple[transformers.GPT2LMHeadModel,
       model: a GPT2 pretrained poetry model
       tokenizer: a GPT2 tokenizer
     """
-    # get model
-    model = transformers.TFGPT2LMHeadModel.from_pretrained("ashiqabdulkhader/GPT2-Poet")
 
     # set model configurations
-    config = transformers.GPT2Config.from_pretrained('gpt2')
+    config = transformers.GPT2Config.from_pretrained('gpt2', from_tf=True)
     config.do_sample = True
     config.max_length = max_seq_len
 
     # get tokenizer
-    tokenizer = transformers.GPT2Tokenizer.from_pretrained("ashiqabdulkhader/GPT2-Poet")
+    tokenizer = transformers.GPT2Tokenizer.from_pretrained("ashiqabdulkhader/GPT2-Poet", from_tf=True)
 
     # add padding token to tokenizer
     tokenizer.add_special_tokens({'pad_token': "[PAD]"})
 
+    # set model configuration
+    model = transformers.GPT2LMHeadModel.from_pretrained("ashiqabdulkhader/GPT2-Poet", config=config, from_tf=True)
     # add pad token to model's configuration
     model.config.pad_token_id = tokenizer.pad_token_id
-    # set model configuration
-    model = transformers.GPT2LMHeadModel.from_pretrained("ashiqabdulkhader/GPT2-Poet", config=model.config, from_tf=True)
     model.resize_token_embeddings(len(tokenizer))
 
     return model, tokenizer
@@ -131,7 +129,7 @@ def generate_texts(model: transformers.GPT2LMHeadModel, tokenizer: transformers.
 def load_model(file_path):
     
     # load a saved model
-    loaded_model = transformers.TFGPT2LMHeadModel.from_pretrained(file_path)
+    loaded_model = transformers.TFGPT2LMHeadModel.from_pretrained(file_path, from_pt=False)
     
     return loaded_model
 
@@ -148,7 +146,7 @@ def compute_perplexity(model: transformers.GPT2LMHeadModel, tokenizer:transforme
       texts: list of list of str generated texts that are in their tokenized forms
     """
     # get encodings for test data
-    encodings = tokenizer("\n\n".join(test_data), return_tensors="pt")
+    encodings = tokenizer("\n\n".join(test_data), return_tensors="tf")
 
     max_length = model.config.n_positions
     stride = 512
@@ -159,7 +157,8 @@ def compute_perplexity(model: transformers.GPT2LMHeadModel, tokenizer:transforme
     for begin_loc in tqdm(range(0, seq_len, stride)):
         end_loc = min(begin_loc + max_length, seq_len)
         trg_len = end_loc - prev_end_loc  # may be different from stride on last loop
-        input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
+        # input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
+        input_ids = encodings.input_ids[:, begin_loc:end_loc]
         target_ids = input_ids.clone()
         target_ids[:, :-trg_len] = -100
 
