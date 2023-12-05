@@ -20,6 +20,8 @@ def split_songs_into_lines(songs: list):
 		lines = song.lower().split('\n')
 
 		# filter out lines that are blank or have metadata 
+		# (some unwanted metadata tokens may be left behind that we don't know about,
+		#  purpose is just to improve the data we do use)
 		meta_lyrics = ["chorus", "verse", "bridge", "lyric", "----"]
 		cleaned_lines = []
 		for line in lines:
