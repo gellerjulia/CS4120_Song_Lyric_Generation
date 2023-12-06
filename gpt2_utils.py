@@ -52,7 +52,7 @@ def get_model_tokenizer(max_seq_len: int) -> tuple[transformers.GPT2LMHeadModel,
 
     return model, tokenizer
 
-def train_model(model: transformers.GPT2LMHeadModel, dset_train: Dset, dset_val: Dset, genre: str, save_model_filename: str, batches: int=4, epochs: int=1, lr: float=1e-3) -> transformers.GPT2LMHeadModel:
+def train_model(model: transformers.GPT2LMHeadModel, dset_train: Dset, dset_val: Dset, genre: str, save_model_filename: str, batch_size: int=4, epochs: int=1, lr: float=1e-3) -> transformers.GPT2LMHeadModel:
     """ Fine tunes a model using the given training and validation data and saves the model to the specified file name. Model is trainined
     with the given batch, epoch, and learning rate parameters. 
     Args:
@@ -61,7 +61,7 @@ def train_model(model: transformers.GPT2LMHeadModel, dset_train: Dset, dset_val:
       dset_val (Dset): validation dataset
       genre (str): genre of the data
       save_model_filename (str): name of the file the model will be saved to
-      batches (int): batch size to use when training
+      batch_size (int): batch size to use when training
       epochs (int) : number of epochs to use during trianing
       lr (float) : learning rate to use when training
 
@@ -73,8 +73,8 @@ def train_model(model: transformers.GPT2LMHeadModel, dset_train: Dset, dset_val:
     training_args = transformers.TrainingArguments(
      output_dir="gpt2-poetry-model_save/training_args",
      learning_rate=lr,
-     per_device_train_batch_size=batches, 
-     per_device_eval_batch_size=batches, 
+     per_device_train_batch_size=batch_size, 
+     per_device_eval_batch_size=batch_size, 
      num_train_epochs=epochs,
      evaluation_strategy='epoch',
      save_strategy='no',
