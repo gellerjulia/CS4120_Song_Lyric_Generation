@@ -122,7 +122,7 @@ def generate_texts(model: transformers.GPT2LMHeadModel, tokenizer: transformers.
     if file_path is not None:
         with open(file_path, 'w') as f:
           for text in gen_texts:
-            f.write(' '.join(text)+ '/n')
+            f.write(' '.join(text)+ '\n')
 
     return gen_texts
 
