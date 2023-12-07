@@ -130,8 +130,15 @@ def generate_texts(model: transformers.GPT2LMHeadModel, tokenizer: transformers.
     return gen_texts
 
 def load_model(file_path):
-    
-    # load a saved model
+    """ 
+    Load a saved model
+
+    Args:
+      file_path (str): path to the saved gpt2 model
+
+    Returns:
+      the model associated with the file path
+    """
     loaded_model = transformers.TFGPT2LMHeadModel.from_pretrained(file_path, from_pt=False)
     
     return loaded_model
